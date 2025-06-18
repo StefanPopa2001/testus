@@ -1,0 +1,77 @@
+services:
+  node-red:
+    image: nodered/node-red:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.node-red.rule=Host(`nodus.localhost`)"
+      - "traefik.http.routers.node-red.entrypoints=web"
+    #ports:
+    #  - "1880:1880"
+    volumes:
+      - node-red-data:/data
+    networks:
+      - net
+
+  traefik:
+    image: "traefik:v3.4"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - net
+  
+  #administrator
+  #tA0d1wTJ9boefm5ksioFOSk7SI6CZIql-NDLjRA6Fvf5rgSxP6UByYAFAfW1GFA06OdZlxD7C4_y73nBp6NW3Q==
+  influxdb2:
+    image: influxdb:2
+    ports:
+      - "8086:8086"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.influxdb2.rule=Host(`label.localhost`)"
+      - "traefik.http.routers.influxdb2.entrypoints=web"
+    volumes:
+      - "influxdb2:/data"
+    networks:
+      - net
+
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+     - '3000:3000'
+    volumes:
+      - "grafana:/data"
+    networks:
+      - net
+
+  con:
+    image: traefik/whoami
+    container_name: con
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.con.rule=Host(`bite.localhost`)"
+      - "traefik.http.routers.con.entrypoints=web"
+      - "traefik.http.routers.con.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$Ff0YExJC$$G1lzStfksjzkbbZDFq9Bv." # admin:password
+    networks:
+      - net
+
+
+volumes:
+  node-red-data:
+  influxdb2:
+  grafana:
+
+networks:
+  net:
+  
+  
